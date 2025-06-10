@@ -16,7 +16,7 @@ headers = {
 }
 
 # 랜덤 티어 문제 가져오기
-def get_random_tier_problem(tier):
+def get_random_problem(tier):
     tier_range = TIER_MAP.get(tier.lower())
     if not tier_range:
         raise ValueError(f"Invalid tier: {tier}. Valid tiers are {', '.join(TIER_MAP.keys())}.")

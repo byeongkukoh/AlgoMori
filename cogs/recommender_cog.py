@@ -35,7 +35,7 @@ class RecommenderCog(commands.Cog):
                 가능한 티어: {', '.join(TIER_MAP.keys())}"""
             )
 
-    @tasks.loop(time=[time(12, 0, 0)]) # UTC+0(=KST-9), 시간대 맞게 수정
+    @tasks.loop(time=[time(23, 0, 0)]) # UTC+0(=KST-9), 시간대 맞게 수정
     async def daily_recommendation(self):
         """ 매일 정오에 추천 문제를 특정 채널에 전송합니다. """
         channel = self.bot.get_channel(DISCORD_CHANNEL_ID)

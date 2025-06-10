@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![discord.py](https://img.shields.io/badge/discord.py-2.x-blue)
 ![solved.ac](https://img.shields.io/badge/solved.ac-API-success)
-![License](https://img.shields.io/github/license/your_github/AlgoMori)
+![License](https://img.shields.io/github/license/byeongkukoh/AlgoMori)
 
 ## 개요
 
@@ -25,18 +25,17 @@
 ## 디렉토리 구조
 
 ```
-AlgoMori/
-├── main.py # 봇 실행 엔트리포인트
-├── config.py # 환경변수 로딩
-├── .env # 봇 토큰 및 채널 ID (절대 깃허브에 올리지 마세요)
-├── cogs/
-│ └── recommender_cog.py # 추천 명령/자동추천 Cog
-├── services/
-│ └── get_random_problem.py # solved.ac API 연동/로직
-├── requirements.txt
-└── README.md
+📁 AlgoMori/
+├── 📜 main.py # 봇 실행 엔트리포인트
+├── 📜 config.py # 환경변수 로딩
+├── 📜 .env # 봇 토큰 및 채널 ID (절대 깃허브에 올리지 마세요)
+├── 📁 cogs/
+│ └── 📜 recommender_cog.py # 추천 명령/자동추천 Cog
+├── 📁 services/
+│ └── 📜 get_random_problem.py # solved.ac API 연동/로직
+├── 📜 requirements.txt
+└── 📜 README.md
 ```
-
 
 ---
 
@@ -57,8 +56,8 @@ pip install -r requirements.txt
 `.env` 파일을 프로젝트 루트에 아래 형식으로 생성하세요.
 
 ```ini
-DISCORD_BOT_TOKEN=여기_디스코드_봇_토큰
-DISCORD_CHANNEL_ID=123456789012345678   # 추천 메시지를 전송할 디스코드 채널 ID
+DISCORD_BOT_TOKEN=디스코드_봇_토큰
+DISCORD_CHANNEL_ID=디스코드_채널_ID   # 추천 메시지를 전송할 디스코드 채널 ID
 ```
 
 ### 3. 디스코드 개발자 포털 설정

@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from config import DISCORD_BOT_TOKEN
 from cogs.recommender_cog import RecommenderCog
+from cogs.tag_cog import TagCog
 
 
 intents = discord.Intents.all()
@@ -15,6 +16,7 @@ async def on_ready():
 
     # Start the daily recommendation task
     await bot.add_cog(RecommenderCog(bot))
+    await bot.add_cog(TagCog(bot))
 
 if __name__ == "__main__":
     bot.run(DISCORD_BOT_TOKEN)

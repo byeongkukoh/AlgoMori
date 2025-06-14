@@ -9,6 +9,7 @@ from services.get_random_problem import get_random_problem, TIER_MAP
 class RecommenderCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.daily_recommendation.start()
 
     @commands.command(name='추천')
     async def recommend(self, ctx, *args):

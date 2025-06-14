@@ -6,9 +6,9 @@ from discord.ext import commands, tasks
 
 TAG_LIST = {
     # 최우선 (1-10위)
-    "다이나믹 프로그래밍": "dp",
-    "깊이 우선 탐색": "dfs",
-    "너비 우선 탐색": "bfs",
+    "DP": "dp",
+    "DFS": "dfs",
+    "BFS": "bfs",
     "이진 탐색": "binary_search",
     "그리디": "greedy",
     "투 포인터": "two_pointer",
@@ -33,9 +33,9 @@ TAG_LIST = {
     "세그먼트 트리": "segtree",
     "KMP": "kmp",
     "트라이": "trie",
-    "이진 검색 트리": "tree_set",
+    "TreeSet": "tree_set",
     "펜윅 트리": "fenwick",
-    "최소 공통 조상": "lca",
+    "LCA": "lca",
     "모듈러 연산": "arithmetic",
     "스위핑": "sweeping",
     "최대 유량": "flow",
@@ -49,7 +49,7 @@ class TagButton(ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_message(
-            f"관련 문제를 추천받으려면 `!추천 {self.label}` 명령어를 사용하세요.",
+            f"관련 문제를 추천받으려면 `!추천 [티어] {self.label}` 명령어를 사용하세요.\n(ex. `!추천 골드 {self.label}`)",
         )
 
 
@@ -73,7 +73,7 @@ class TagCog(commands.Cog):
 
         embed = discord.Embed(
             title="주요 태그 목록",
-            description = "다음은 코딩 테스트에서 자주 사용되는 30개의 태그 목록입니다. 각 태그명을 이용하여 문제를 추천받을 수 있습니다.",
+            description = "다음은 코딩 테스트에서 자주 출제되는 25개의 태그 목록입니다. 각 태그명을 이용하여 문제를 추천받을 수 있습니다.",
             color=0x5c8aff
         )
 

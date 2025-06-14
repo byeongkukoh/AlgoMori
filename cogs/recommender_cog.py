@@ -11,13 +11,20 @@ class RecommenderCog(commands.Cog):
         self.bot = bot
 
     @commands.command(name='추천')
-    async def recommend(self, ctx, tier: str):
+    async def recommend(self, ctx, *args):
         """ !추천 [티어] : 해당 난이도(티어)의 문제를 랜덤으로 추천합니다. """
         try:
-            problem = get_random_problem(tier)
+            if not args:
+                await ctx.send("티어를 입력해주세요. 예시 `!추천 브론즈`")
+                return
+            
+            tier = args[0]
+            tag = " ".join(args[1:]) if len(args) > 1 else None
+
+            problem = get_random_problem(tier, tag)
             if problem:
                 embed = discord.Embed(
-                    title = f"{tier.title()} 문제 추천",
+                    title = f"{tier.title()} 문제 추천" + (f" - {tag}" if tag else ""),
                     description = f"{problem['title']} (난이도: {problem['level']})",
                     url = problem['baekjoon_url'],
                     color=0x5c8aff
@@ -26,12 +33,12 @@ class RecommenderCog(commands.Cog):
                 await ctx.send(embed=embed)
             else:
                 await ctx.send(
-                    f"`{tier}에 해당하는 문제를 찾을 수 없습니다. 다시 시도해주세요.`"
+                    f"`{tier}{' ' + tag if tag else ''}에 해당하는 문제를 찾을 수 없습니다. 다시 시도해주세요.`"
                 )
         except Exception as e:
             await ctx.send(
                 f"""오류 발생: {e}
-                명령어 예시: `!추천 브론즈`
+                명령어 예시: `!추천 브론즈` 또는 !추천 실버 디익스트라
                 가능한 티어: {', '.join(TIER_MAP.keys())}"""
             )
 

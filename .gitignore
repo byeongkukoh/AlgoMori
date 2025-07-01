@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.pdb
+.venv/
 
 # Secret/Config files
 .env

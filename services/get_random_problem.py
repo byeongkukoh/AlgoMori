@@ -1,15 +1,6 @@
 import requests
-from cogs.tag_cog import TAG_LIST
-
-# 티어 맵핑
-TIER_MAP = {
-    "브론즈": "1..5",
-    "실버": "6..10",
-    "골드": "11..15",
-    "플래티넘": "16..20",
-    "다이아": "21..25",
-    "루비": "26..30",
-}
+from data.tag_list import TAG_LIST
+from data.tier_map import TIER_MAP, TIERS
 
 # request header 설정
 headers = {

@@ -1,9 +1,12 @@
 import discord
 
+from data.tag_list import TAG_LIST
+from data.tier_map import TIER_MAP, TIERS
+
 from datetime import time
 from config import DISCORD_CHANNEL_ID
 from discord.ext import commands, tasks
-from services.get_random_problem import get_random_problem, TIER_MAP
+from services.get_random_problem import get_random_problem
 
 
 class RecommenderCog(commands.Cog):

@@ -3,6 +3,8 @@ import discord
 from data.tag_list import TAG_LIST
 from data.tier_map import TIER_MAP, TIERS
 
+from views.tier_select import TierSelectView
+
 from datetime import time
 from config import DISCORD_CHANNEL_ID
 from discord.ext import commands, tasks
@@ -12,14 +14,18 @@ from services.get_random_problem import get_random_problem
 class RecommenderCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.daily_recommendation.start()
+        self.daily_recommendation.start()   # 자동 추천 기능
 
     @commands.command(name='추천')
     async def recommend(self, ctx, *args):
-        """ !추천 [티어] : 해당 난이도(티어)의 문제를 랜덤으로 추천합니다. """
+        """
+        !추천 : 단계별 선택 인터랙션이 시작됩니다.
+        !추천 [티어] : 해당 난이도(티어)의 문제를 랜덤으로 추천합니다.
+        !추천 [티어] [태그] : 해당 난이도와 태그에 맞는 문제를 랜덤으로 추천합니다.
+        """
         try:
             if not args:
-                await ctx.send("티어를 입력해주세요. 예시 `!추천 브론즈`")
+                await ctx.send("원하는 티어를 선택하세요.", view=TierSelectView())
                 return
             
             tier = args[0]

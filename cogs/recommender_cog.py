@@ -4,8 +4,7 @@ from data.tag_list import TAG_LIST
 from data.tier_map import TIER_MAP, TIERS
 
 from views.tier_select import TierSelectView
-
-from datetime import time
+from datetime import time, timezone, timedelta
 from config import DISCORD_CHANNEL_ID
 from discord.ext import commands, tasks
 from services.get_random_problem import get_random_problem
@@ -52,9 +51,10 @@ class RecommenderCog(commands.Cog):
                 가능한 티어: {', '.join(TIER_MAP.keys())}"""
             )
 
-    @tasks.loop(time=[time(23, 0, 0)]) # UTC+0(=KST-9), 시간대 맞게 수정
+    kst = timezone(timedelta(hours=9))
+    @tasks.loop(time=[time(8, 0, 0, tzinfo=kst)]) # KST 시간대로 수정
     async def daily_recommendation(self):
-        """ 매일 정오에 추천 문제를 특정 채널에 전송합니다. """
+        """ 매일 KST 오전 8시에 추천 문제를 특정 채널에 전송합니다. """
         channel = self.bot.get_channel(DISCORD_CHANNEL_ID)
         
         for tier in ["브론즈", "실버", "골드", "플래티넘"]:

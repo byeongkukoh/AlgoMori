@@ -1,7 +1,6 @@
 import discord
 
 from discord import ui
-
 from data.tag_list import TAG_LIST
 from services.get_random_problem import get_random_problem
 
@@ -28,7 +27,7 @@ class TagSelect(ui.Select):
 
         if problem:
             embed = discord.Embed(
-                title=f"{self.tier} - {tag if tag != "__ALL__" else ""} 문제 추천",
+                title=f"{self.tier} - {tag if tag != '__ALL__' else ''} 문제 추천",
                 description=f"{problem['title']} (난이도: {problem['level']})",
                 url=problem['baekjoon_url'],
                 color=0x5c8aff

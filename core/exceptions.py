@@ -1,8 +1,14 @@
+"""
+🧩 커스텀 예외 클래스 정의
+"""
+
 class AlgoMoriException(Exception):
     """
     📌 AlgoMori 프로젝트의 기본 예외 클래스
     """
-    pass
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
 
 
 class ConfigurationError(AlgoMoriException):
@@ -18,7 +24,9 @@ class ProblemNotFoundError(AlgoMoriException):
     """
     📌 문제를 찾을 수 없을 때 발생하는 오류
     """
-    pass
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
 
 
 class APIError(AlgoMoriException):
@@ -30,3 +38,14 @@ class APIError(AlgoMoriException):
         self.message = message
         super().__init__(f"APIError {status_code}: {message}")
     
+
+class ParseError(AlgoMoriException):
+    """
+    📌 API 응답 파싱 실패 시 발생하는 오류
+    """
+    def __init__(self, message: str = "데이터 파싱에 실패했습니다."):
+        self.message = message
+        super().__init__(self.message)
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)

@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 """
 class ProblemServiceInterface(ABC):
     @abstractmethod
-    async def get_random_problem(self, tier: str, tag: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def get_random_problem(self, tier: str, tag: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         📌 티어와 태그(선택)를 바탕으로 랜덤으로 문제를 조회
         """

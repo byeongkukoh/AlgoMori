@@ -5,7 +5,7 @@ import os
 import atexit
 
 from discord.ext import commands
-from config import DISCORD_BOT_TOKEN
+from core.config import DISCORD_BOT_TOKEN
 from cogs.recommender_cog import RecommenderCog
 from cogs.tag_cog import TagCog
 from utils.logger import info, process, warn, error

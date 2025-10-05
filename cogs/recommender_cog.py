@@ -5,9 +5,9 @@ from data.tier_map import TIER_MAP, TIERS
 
 from views.tier_select import TierSelectView
 from datetime import time, timezone, timedelta
-from config import DISCORD_CHANNEL_ID
+from core.config import DISCORD_CHANNEL_ID
 from discord.ext import commands, tasks
-from services.get_random_problem import get_random_problem
+from services.problem_service import get_random_problem
 
 
 class RecommenderCog(commands.Cog):

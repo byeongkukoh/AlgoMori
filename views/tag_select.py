@@ -2,7 +2,7 @@ import discord
 
 from discord import ui
 from data.tag_list import TAG_LIST
-from services.get_random_problem import get_random_problem
+from services.problem_service import get_random_problem
 
 class TagSelect(ui.Select):
     def __init__(self, tier):

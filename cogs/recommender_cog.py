@@ -1,19 +1,26 @@
 import discord
 
+from datetime import time, timezone, timedelta
 from data.tag_list import TAG_LIST
 from data.tier_map import TIER_MAP, TIERS
+from discord.ext import commands, tasks
 
 from views.tier_select import TierSelectView
+from core.config import Config
+from core.exceptions import ConfigurationError, ProblemNotFoundError, APIError, ParseError
+from services.problem_service import ProblemService
+from services.api_client import SolvedAcClient
 
-from datetime import time
-from config import DISCORD_CHANNEL_ID
-from discord.ext import commands, tasks
-from services.get_random_problem import get_random_problem
 
+config = Config()
+channel_id = config.get_discord_channel_id()
 
 class RecommenderCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        # 서비스 인스턴스 생성
+        api_client = SolvedAcClient()
+        self.problem_service = ProblemService(api_client)
         self.daily_recommendation.start()   # 자동 추천 기능
 
     @commands.command(name='추천')
@@ -31,47 +38,50 @@ class RecommenderCog(commands.Cog):
             tier = args[0]
             tag = " ".join(args[1:]) if len(args) > 1 else None
 
-            problem = get_random_problem(tier, tag)
-            if problem:
-                embed = discord.Embed(
-                    title = f"{tier.title()} 문제 추천" + (f" - {tag}" if tag else ""),
-                    description = f"{problem['title']} (난이도: {problem['level']})",
-                    url = problem['baekjoon_url'],
-                    color=0x5c8aff
-                )
+            # 서비스 클래스를 통해 문제 조회 (이미 Problem 객체로 반환됨)
+            problem = self.problem_service.get_random_problem(tier, tag)
+            
+            embed = discord.Embed(
+                title = f"{tier.title()} 문제 추천" + (f" - {tag}" if tag else ""),
+                description = f"{problem.title} (난이도: {problem.level})",
+                url = problem.url,
+                color=0x5c8aff
+            )
 
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send(
-                    f"`{tier}{' ' + tag if tag else ''}에 해당하는 문제를 찾을 수 없습니다. 다시 시도해주세요.`"
-                )
+            await ctx.send(embed=embed)
+            
+        except (ConfigurationError, ProblemNotFoundError, APIError, ParseError) as e:
+            await ctx.send(f"오류: {e}")
         except Exception as e:
             await ctx.send(
                 f"""오류 발생: {e}
-                명령어 예시: `!추천 브론즈` 또는 !추천 실버 디익스트라
+                명령어 예시: `!추천 브론즈` 또는 !추천 실버 다익스트라
                 가능한 티어: {', '.join(TIER_MAP.keys())}"""
             )
 
-    @tasks.loop(time=[time(23, 0, 0)]) # UTC+0(=KST-9), 시간대 맞게 수정
+    kst = timezone(timedelta(hours=9))
+    @tasks.loop(time=[time(8, 0, 0, tzinfo=kst)]) # KST 시간대로 수정
     async def daily_recommendation(self):
-        """ 매일 정오에 추천 문제를 특정 채널에 전송합니다. """
-        channel = self.bot.get_channel(DISCORD_CHANNEL_ID)
+        """ 매일 KST 오전 8시에 추천 문제를 특정 채널에 전송합니다. """
+        channel = self.bot.get_channel(channel_id)
         
         for tier in ["브론즈", "실버", "골드", "플래티넘"]:
-            problem = get_random_problem(tier)
-            if problem:
+            try:
+                # 서비스 클래스를 통해 문제 조회 (이미 Problem 객체로 반환됨)
+                problem = self.problem_service.get_random_problem(tier)
+                
                 embed = discord.Embed(
                     title = f"{tier.title()} 문제 추천",
-                    description = f"{problem['title']} (난이도: {problem['level']})",
-                    url = problem['baekjoon_url'],
+                    description = f"{problem.title} (난이도: {problem.level})",
+                    url = problem.url,
                     color=0x5c8aff
                 )
 
                 await channel.send(embed=embed)
-
-            else:
+                
+            except Exception as e:
                 await channel.send(
-                    f"`{tier}에 해당하는 문제를 찾을 수 없습니다. 다시 시도해주세요.`"
+                    f"`{tier}에 해당하는 문제를 찾을 수 없습니다. ({e})`"
                 )
 
     @daily_recommendation.before_loop

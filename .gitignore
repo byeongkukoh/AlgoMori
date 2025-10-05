@@ -8,6 +8,10 @@ __pycache__/
 
 # Secret/Config files
 .env
+
+# Runtime files
+bot.pid
+*.pid
 *.env
 
 # Log files

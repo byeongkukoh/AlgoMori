@@ -43,9 +43,7 @@ class ParseError(AlgoMoriException):
     """
     📌 API 응답 파싱 실패 시 발생하는 오류
     """
+
     def __init__(self, message: str = "데이터 파싱에 실패했습니다."):
-        self.message = message
-        super().__init__(self.message)
-    def __init__(self, message: str):
         self.message = message
         super().__init__(self.message)

@@ -2,8 +2,8 @@
 🧩 API 응답 dict를 Problem 객체로 변환
 """
 
-from models.problem import Problem
-from core.exceptions import ParseError
+from algomori.domain.models.problem import Problem
+from algomori.core.exceptions import ParseError
 
 def parse_problem(data: dict) -> Problem:
     try:

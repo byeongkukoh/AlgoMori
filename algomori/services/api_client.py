@@ -5,7 +5,7 @@
 import requests
 
 from typing import Optional
-from core.exceptions import APIError, ProblemNotFoundError
+from algomori.core.exceptions import APIError, ProblemNotFoundError
 
 class SolvedAcClient:
     BASE_URL = "https://solved.ac/api/v3"
@@ -34,6 +34,7 @@ class SolvedAcClient:
             
             return data['items'][0]
         except requests.HTTPError as e:
-            raise APIError(response.status_code, str(e))
+            status_code = e.response.status_code if e.response is not None else -1
+            raise APIError(status_code, str(e))
         except requests.RequestException as e:
             raise APIError(-1, str(e))

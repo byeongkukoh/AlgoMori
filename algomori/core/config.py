@@ -37,7 +37,7 @@ class Config(ConfigInterface):
         
         return token
     
-    def get_discord_channel_id(self) -> str:
+    def get_discord_channel_id(self) -> int:
         """
         📌 .env 파일에 정의된 Discord Channel ID를 조회
         """

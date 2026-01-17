@@ -1,11 +1,11 @@
 from typing import Optional
 
-from core.interface import ProblemServiceInterface
-from core.exceptions import ConfigurationError
-from services.api_client import SolvedAcClient
-from services.parsers import parse_problem
-from data.tier_map import TIER_MAP
-from data.tag_list import TAG_LIST
+from algomori.core.interface import ProblemServiceInterface
+from algomori.core.exceptions import ConfigurationError
+from algomori.services.api_client import SolvedAcClient
+from algomori.services.parsers import parse_problem
+from algomori.data.tier_map import TIER_MAP
+from algomori.data.tag_list import TAG_LIST
 
 class ProblemService(ProblemServiceInterface):
     def __init__(self, api_client: SolvedAcClient):

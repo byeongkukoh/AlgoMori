@@ -1,7 +1,7 @@
 import discord
 
-from data.tag_list import TAG_LIST
-from data.tier_map import TIER_MAP, TIERS
+from algomori.data.tag_list import TAG_LIST
+from algomori.data.tier_map import TIER_MAP, TIERS
 
 from discord import ui
 from discord.ext import commands, tasks

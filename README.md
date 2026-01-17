@@ -48,31 +48,31 @@
 ### 📁 프로젝트 구조
 ```
 📁 AlgoMori/
-├── 📜 main.py                   # 애플리케이션 진입점
+├── 📜 main.py                   # 엔트리포인트 (algomori.app.run 호출)
 ├── 📜 .env                      # 환경변수 (절대 공개 금지)
 ├── 📜 requirements.txt          # Python 의존성
-├── 📁 core/                     # 핵심 시스템
-│   ├── 📜 config.py            # 환경설정 관리
-│   ├── 📜 interface.py         # 서비스 인터페이스
-│   └── 📜 exceptions.py        # 커스텀 예외 클래스
-├── 📁 services/                 # 비즈니스 로직 계층
-│   ├── 📜 problem_service.py   # 문제 추천 서비스
-│   ├── 📜 api_client.py        # solved.ac API 클라이언트
-│   └── 📜 parsers.py           # 데이터 변환 계층
-├── 📁 models/                   # 데이터 모델
-│   └── 📜 problem.py           # Problem 데이터클래스
-├── 📁 cogs/                     # Discord 명령어 모듈
-│   ├── 📜 recommender_cog.py   # 추천 명령어
-│   └── 📜 tag_cog.py           # 태그 정보 명령어
-├── 📁 views/                    # UI 컴포넌트
-│   ├── 📜 tier_select.py       # 난이도 선택 UI
-│   └── 📜 tag_select.py        # 태그 선택 UI
-├── 📁 data/                     # 정적 데이터
-│   ├── 📜 tier_map.py          # 난이도 매핑
-│   └── 📜 tag_list.py          # 태그 목록
-└── 📁 utils/                    # 유틸리티
-    └── 📜 logger.py            # 색상 코드 로깅 시스템
+├── 📁 algomori/                 # 애플리케이션 패키지
+│   ├── 📜 app.py                # 봇 생성/실행, PID/시그널 처리
+│   ├── 📁 core/                 # 설정/인터페이스/예외
+│   ├── 📁 services/             # solved.ac 연동 + 추천 서비스
+│   ├── 📁 domain/               # 도메인 모델
+│   │   └── 📁 models/           # Problem 등 데이터 클래스
+│   ├── 📁 discord/              # Discord 통합 (cogs, views)
+│   │   ├── 📁 cogs/             # 명령어(Commands)
+│   │   └── 📁 views/            # UI(Views: 버튼/드롭다운)
+│   ├── 📁 data/                 # 정적 데이터(티어/태그)
+│   └── 📁 utils/                # 로깅 등 공통 유틸
+└── 📁 .github/                  # PR 템플릿 등(선택)
 ```
+
+### 🧭 디렉토리 역할
+- `algomori/app.py`: 봇 실행(엔트리), 의존성 구성, PID/시그널 처리
+- `algomori/core/`: 환경설정(`Config`), 인터페이스, 예외 정의
+- `algomori/services/`: solved.ac API 호출 및 추천 로직
+- `algomori/domain/`: 프로젝트 핵심 데이터 모델(도메인 타입)
+- `algomori/discord/`: Discord와 맞닿는 레이어(cogs/views)
+- `algomori/data/`: 티어/태그 같은 고정 데이터
+- `algomori/utils/`: 로깅 등 공통 유틸리티
 
 ### 🔧 기술 스택
 - **언어**: Python 3.10+

@@ -106,7 +106,7 @@ python -m pip install -r requirements.txt
 - 필수: `DISCORD_BOT_TOKEN`
 - 선택: `ALGOMORI_GUILD_CONFIG_PATH` (서버별 설정 저장 파일 경로, 기본값: `runtime/guild_config.json`)
 
-로컬 개발 시 프로젝트 루트에 `.env`를 만들고 다음처럼 입력하세요:
+로컬 개발 시 **프로젝트 루트(= `Dockerfile`이 있는 위치)** 에 `.env`를 만들고 다음처럼 입력하세요:
 
 ```ini
 DISCORD_BOT_TOKEN=your_discord_bot_token_here
@@ -198,10 +198,27 @@ python -c "import asyncio; from algomori.services.problem_service import Problem
 - `DISCORD_BOT_TOKEN`은 **컨테이너 환경변수(Secret)** 로 주입합니다.
 - 서버별 자동 추천 채널 설정은 컨테이너의 `runtime/guild_config.json`에 저장되므로, EC2에서는 `/app/runtime`를 볼륨 마운트하는 것을 권장합니다.
 
-예시:
+예시(권장: `.env` 파일 사용):
 ```bash
+# (1) Dockerfile이 있는 repo root에서
+#     .env 파일 생성 (예: DISCORD_BOT_TOKEN=...)
+
+# (2) 이미지 빌드
 docker build -t algomori:latest .
 
+# (3) 컨테이너 실행
+# - .env 파일은 호스트의 현재 디렉토리에서 읽어 환경변수로 주입됨
+# - runtime/ 은 EC2에서 볼륨으로 유지 (서버별 설정 유지)
+docker run -d \
+  --name algomori \
+  --env-file .env \
+  -e ALGOMORI_GUILD_CONFIG_PATH=/app/runtime/guild_config.json \
+  -v $(pwd)/runtime:/app/runtime \
+  algomori:latest
+```
+
+대안(직접 env 주입):
+```bash
 docker run -d \
   --name algomori \
   -e DISCORD_BOT_TOKEN=your_token_here \
@@ -210,7 +227,7 @@ docker run -d \
   algomori:latest
 ```
 
-> 최초 실행 후 Discord 서버에서 `!설정채널`을 실행해야 자동 추천이 전송됩니다.
+> 최초 실행 후 Discord 서버에서 `!설정`을 실행해야 자동 추천이 전송됩니다.
 
 ---
 

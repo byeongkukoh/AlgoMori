@@ -3,8 +3,7 @@ import discord
 from discord import ui
 
 from algomori.data.tag_list import TAG_LIST
-from algomori.core.exceptions import ConfigurationError, ProblemNotFoundError, APIError, ParseError
-from algomori.discord.embeds import build_problem_embed
+from algomori.discord.views.recommend_filter_select import RecommendFilterSelectView
 from algomori.services.problem_service import ProblemService
 
 
@@ -28,25 +27,18 @@ class TagSelect(ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         tag = self.values[0]
+        selected_tag = None if tag == "__ALL__" else tag
 
-        try:
-            problem = await self.problem_service.get_random_problem(
-                self.tier,
-                None if tag == "__ALL__" else tag,
-            )
+        view = RecommendFilterSelectView(
+            tier=self.tier,
+            tag=selected_tag,
+            problem_service=self.problem_service,
+        )
 
-            embed = build_problem_embed(
-                problem=problem,
-                tier=self.tier,
-                tag=None if tag == "__ALL__" else tag,
-            )
-
-            await interaction.response.edit_message(content=None, embed=embed, view=None)
-
-        except (ConfigurationError, ProblemNotFoundError, APIError, ParseError) as e:
-            await interaction.response.edit_message(content=f"오류: {e}", view=None)
-        except Exception:
-            await interaction.response.edit_message(content="해당 티어와 알고리즘 유형에 맞는 문제가 없습니다.", view=None)
+        await interaction.response.edit_message(
+            content=view.build_initial_message(),
+            view=view,
+        )
 
 
 class TagSelectView(ui.View):

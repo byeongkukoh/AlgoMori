@@ -20,6 +20,7 @@ class ProblemService(ProblemServiceInterface):
         tier: str,
         tag: Optional[str] = None,
         exclude_solved_by: Optional[str] = None,
+        min_solved_count: int | None = None,
     ) -> Problem:
         tier = tier.strip()
         tag = tag.strip() if tag else None
@@ -39,9 +40,10 @@ class ProblemService(ProblemServiceInterface):
                     f"유효하지 않은 태그입니다: {tag}. 가능한 태그: {', '.join(TAG_LIST.keys())}"
                 )
 
-        # 유저 기반 추천(안 푼 문제)인 경우에만, 너무 마이너한 문제를 피하기 위해
-        # solved count 10,000 이상 필터를 적용합니다.
-        min_solved_count = 10000 if exclude_solved_by else 0
+        if min_solved_count is None:
+            # 기존 동작 유지: 유저 기반 추천(안 푼 문제)인 경우에만 너무 마이너한 문제를 피하려고
+            # solved count 10,000 이상 필터를 기본 적용합니다.
+            min_solved_count = 10000 if exclude_solved_by else 0
 
         data = await self.api_client.get_random_problem_async(
             tier_range,

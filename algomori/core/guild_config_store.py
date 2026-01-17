@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 
 
-def validate_hhmm(value: str) -> str:
-    """HH:MM(24h) 형식을 검증하고 정규화된 문자열을 반환합니다."""
+def validate_hhmm(value: str) -> tuple[int, int]:
+    """HH:MM(24h) 형식을 검증해 (hour, minute)로 반환합니다."""
 
     value = value.strip()
     parts = value.split(":")
@@ -25,6 +25,16 @@ def validate_hhmm(value: str) -> str:
         raise ValueError("시간(HH)은 00~23 범위여야 합니다.")
     if not (0 <= minute <= 59):
         raise ValueError("분(MM)은 00~59 범위여야 합니다.")
+
+    return hour, minute
+
+
+def normalize_hhmm_5min(value: str) -> str:
+    """HH:MM(24h) + 5분 단위 규칙을 검증하고 문자열로 정규화합니다."""
+
+    hour, minute = validate_hhmm(value)
+    if minute % 5 != 0:
+        raise ValueError("분(MM)은 5분 단위(00,05,10,...)여야 합니다.")
 
     return f"{hour:02d}:{minute:02d}"
 
@@ -70,7 +80,7 @@ class GuildConfigStore:
         self._save_raw(data)
 
     def set_recommendation_time(self, *, guild_id: int, hhmm: str) -> None:
-        hhmm = validate_hhmm(hhmm)
+        hhmm = normalize_hhmm_5min(hhmm)
 
         data = self._load_raw()
         guild_key = str(guild_id)
@@ -93,7 +103,7 @@ class GuildConfigStore:
             return None
 
         try:
-            return validate_hhmm(hhmm)
+            return normalize_hhmm_5min(hhmm)
         except ValueError:
             return None
 
@@ -129,7 +139,7 @@ class GuildConfigStore:
                     GuildConfig(
                         guild_id=int(guild_id_str),
                         recommendation_channel_id=int(channel_id),
-                        recommendation_time_hhmm=validate_hhmm(
+                        recommendation_time_hhmm=normalize_hhmm_5min(
                             str(
                                 guild_entry.get(
                                     "recommendation_time_hhmm",

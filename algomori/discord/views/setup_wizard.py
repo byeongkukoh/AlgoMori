@@ -3,24 +3,49 @@ from __future__ import annotations
 import discord
 from discord import ui
 
-from algomori.core.guild_config_store import GuildConfigStore, validate_hhmm
+from algomori.core.guild_config_store import GuildConfigStore, normalize_hhmm_5min
 
 
-class _TimeModal(ui.Modal, title="자동 추천 시간 설정"):
-    time_hhmm = ui.TextInput(
-        label="시간(HH:MM, KST)",
-        placeholder="예: 08:00",
-        required=True,
-        max_length=5,
-    )
+class HourSelect(ui.Select):
+    def __init__(self, *, wizard: "SetupWizardView", initial_hour: int):
+        self.wizard = wizard
+        options = [
+            discord.SelectOption(label=f"{hour:02d}", value=str(hour), default=(hour == initial_hour))
+            for hour in range(24)
+        ]
 
-    def __init__(self, *, initial_value: str, on_submit_callback):
-        super().__init__()
-        self.time_hhmm.default = initial_value
-        self._on_submit_callback = on_submit_callback
+        super().__init__(
+            placeholder="시간(HH) 선택",
+            options=options,
+            min_values=1,
+            max_values=1,
+        )
 
-    async def on_submit(self, interaction: discord.Interaction) -> None:
-        await self._on_submit_callback(interaction, str(self.time_hhmm.value))
+    async def callback(self, interaction: discord.Interaction) -> None:
+        self.wizard.selected_hour = int(self.values[0])
+        await self.wizard.render(interaction)
+
+
+class MinuteSelect(ui.Select):
+    def __init__(self, *, wizard: "SetupWizardView", initial_minute: int):
+        self.wizard = wizard
+        minutes = list(range(0, 60, 5))
+
+        options = [
+            discord.SelectOption(label=f"{m:02d}", value=str(m), default=(m == initial_minute))
+            for m in minutes
+        ]
+
+        super().__init__(
+            placeholder="분(MM) 선택 (5분 단위)",
+            options=options,
+            min_values=1,
+            max_values=1,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        self.wizard.selected_minute = int(self.values[0])
+        await self.wizard.render(interaction)
 
 
 class SetupWizardView(ui.View):
@@ -28,7 +53,7 @@ class SetupWizardView(ui.View):
 
     순서:
     1) 채널 설정 (현재 채널)
-    2) 시간 설정 (HH:MM)
+    2) 시간 설정 (시간/분 드롭다운)
     """
 
     def __init__(self, *, store: GuildConfigStore, guild_id: int):
@@ -37,17 +62,24 @@ class SetupWizardView(ui.View):
         self.guild_id = guild_id
 
         self._step = 1
-        self._sync_buttons()
 
-    def _sync_buttons(self) -> None:
-        for child in self.children:
-            if isinstance(child, ui.Button):
-                if child.custom_id == "setup:set_channel":
-                    child.disabled = self._step != 1
-                elif child.custom_id == "setup:set_time":
-                    child.disabled = self._step != 2
-                elif child.custom_id == "setup:finish":
-                    child.disabled = self._step != 3
+        # Step 2 state
+        initial_hhmm = (
+            self.store.get_recommendation_time_hhmm(guild_id=self.guild_id)
+            or self.store.DEFAULT_RECOMMENDATION_TIME_HHMM
+        )
+
+        hour_str, minute_str = initial_hhmm.split(":")
+        self.selected_hour = int(hour_str)
+        self.selected_minute = int(minute_str)
+
+        self.hour_select = HourSelect(wizard=self, initial_hour=self.selected_hour)
+        self.minute_select = MinuteSelect(wizard=self, initial_minute=self.selected_minute)
+
+        self.add_item(self.hour_select)
+        self.add_item(self.minute_select)
+
+        self._sync_controls()
 
     def build_initial_message(self) -> str:
         channel_id = self.store.get_recommendation_channel_id(guild_id=self.guild_id)
@@ -68,7 +100,20 @@ class SetupWizardView(ui.View):
             "순서대로 진행하세요."
         )
 
-    async def _render(self, interaction: discord.Interaction) -> None:
+    def _sync_controls(self) -> None:
+        for child in self.children:
+            if isinstance(child, ui.Button):
+                if child.custom_id == "setup:set_channel":
+                    child.disabled = self._step != 1
+                elif child.custom_id == "setup:save_time":
+                    child.disabled = self._step != 2
+                elif child.custom_id == "setup:finish":
+                    child.disabled = self._step != 3
+
+            if isinstance(child, ui.Select):
+                child.disabled = self._step != 2
+
+    async def render(self, interaction: discord.Interaction) -> None:
         channel_id = self.store.get_recommendation_channel_id(guild_id=self.guild_id)
         time_hhmm = (
             self.store.get_recommendation_time_hhmm(guild_id=self.guild_id)
@@ -76,8 +121,7 @@ class SetupWizardView(ui.View):
         )
 
         content = self._build_content(channel_id=channel_id, time_hhmm=time_hhmm)
-
-        self._sync_buttons()
+        self._sync_controls()
         await interaction.response.edit_message(content=content, view=self)
 
     @ui.button(label="1) 이 채널로 설정", style=discord.ButtonStyle.primary, custom_id="setup:set_channel")
@@ -96,31 +140,25 @@ class SetupWizardView(ui.View):
         )
 
         self._step = 2
-        await self._render(interaction)
+        await self.render(interaction)
 
-    @ui.button(label="2) 시간 설정", style=discord.ButtonStyle.primary, custom_id="setup:set_time")
-    async def set_time(self, interaction: discord.Interaction, button: ui.Button) -> None:
+    @ui.button(label="2) 시간 저장", style=discord.ButtonStyle.primary, custom_id="setup:save_time")
+    async def save_time(self, interaction: discord.Interaction, button: ui.Button) -> None:
         if interaction.guild is None:
             await interaction.response.send_message("서버에서만 사용할 수 있습니다.", ephemeral=True)
             return
 
-        initial_value = (
-            self.store.get_recommendation_time_hhmm(guild_id=interaction.guild.id)
-            or self.store.DEFAULT_RECOMMENDATION_TIME_HHMM
-        )
+        hhmm_candidate = f"{self.selected_hour:02d}:{self.selected_minute:02d}"
 
-        async def _on_submit(interaction2: discord.Interaction, value: str) -> None:
-            try:
-                hhmm = validate_hhmm(value)
-            except ValueError as e:
-                await interaction2.response.send_message(str(e), ephemeral=True)
-                return
+        try:
+            hhmm = normalize_hhmm_5min(hhmm_candidate)
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
+            return
 
-            self.store.set_recommendation_time(guild_id=interaction.guild.id, hhmm=hhmm)
-            self._step = 3
-            await self._render(interaction2)
-
-        await interaction.response.send_modal(_TimeModal(initial_value=initial_value, on_submit_callback=_on_submit))
+        self.store.set_recommendation_time(guild_id=interaction.guild.id, hhmm=hhmm)
+        self._step = 3
+        await self.render(interaction)
 
     @ui.button(label="완료", style=discord.ButtonStyle.success, custom_id="setup:finish")
     async def finish(self, interaction: discord.Interaction, button: ui.Button) -> None:
@@ -134,5 +172,5 @@ class SetupWizardView(ui.View):
 
     async def on_timeout(self) -> None:
         for child in self.children:
-            if isinstance(child, ui.Button):
+            if isinstance(child, (ui.Button, ui.Select)):
                 child.disabled = True

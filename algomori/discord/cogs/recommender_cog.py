@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 
 from datetime import datetime, timezone, timedelta
@@ -62,7 +64,7 @@ class RecommenderCog(commands.Cog):
 
     kst = timezone(timedelta(hours=9))
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=5)
     async def daily_recommendation(self):
         """설정된 시각(KST)에 자동 추천을 전송합니다."""
 
@@ -98,6 +100,15 @@ class RecommenderCog(commands.Cog):
 
     @daily_recommendation.before_loop
     async def before_daily_recommendation(self):
-        """매일 추천 작업이 시작되기 전에 대기합니다."""
+        """루프를 5분 경계에 맞춰 시작합니다."""
 
         await self.bot.wait_until_ready()
+
+        now = datetime.now(self.kst)
+        minutes_to_wait = (5 - (now.minute % 5)) % 5
+        seconds_to_wait = minutes_to_wait * 60 - now.second - (now.microsecond / 1_000_000)
+        if seconds_to_wait < 0:
+            seconds_to_wait += 300
+
+        if seconds_to_wait > 0:
+            await asyncio.sleep(seconds_to_wait)

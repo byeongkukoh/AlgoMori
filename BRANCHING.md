@@ -1,59 +1,91 @@
 # Git 브랜치 전략
 
-이 문서는 AlgoMori 저장소의 브랜치 역할과 협업 흐름을 정리합니다.
+이 저장소는 `main`(릴리즈)과 `dev`(개발 최신) 2개의 장기 브랜치만 유지하고,
+나머지는 **단기 브랜치 + PR**로 운영합니다.
 
-## 현재 브랜치 구성(관찰 기반)
+목표:
+- `main`은 **릴리즈 스냅샷**만 담는다.
+- `dev`는 **항상 최신 개발 버전**을 담는다.
+- 모든 변경은 PR로 리뷰/기록한다.
 
-이 저장소에는 `main`, `dev`, `docs` 3개의 장기 브랜치가 존재합니다.
+## 1) 장기 브랜치
 
-- `main`
-  - 기본(기준) 브랜치입니다.
-  - PR merge 커밋들이 `main`의 1st-parent 히스토리에 남아 있으며, 태그(`v1.0.0`, `v1.1.0`, `v1.2.0`)가 릴리즈 단위로 사용되었습니다.
-- `dev`
-  - 코드/아키텍처 변경이 집중된 브랜치입니다.
-  - 실제 히스토리에서 `dev`에서 작업 후 PR로 `main`에 병합된 이력이 있습니다(예: PR #10).
-- `docs`
-  - 문서 변경(예: `CHANGELOG.md`)을 별도로 다루기 위해 사용된 이력이 있습니다(예: PR #9).
-  - `v1.2.0` 태그가 `docs`에서 생성된 merge commit에 붙어 있어, 문서/릴리즈 노트 갱신과 릴리즈 태깅이 함께 진행된 흔적이 있습니다.
+### `main` (릴리즈용)
+- 배포/릴리즈 단위로만 갱신합니다.
+- 원칙적으로 직접 작업하지 않고, **`dev`에서 PR로 병합**합니다.
+- 릴리즈는 `main`의 커밋에 `vX.Y.Z` 태그를 붙여 고정합니다.
 
-또한 `README.md`에는 기여 흐름으로 **feature 브랜치 기반 PR** 방식이 안내되어 있습니다.
+### `dev` (개발 최신)
+- 기본 개발 브랜치입니다.
+- 기능/버그/리팩터링/문서 변경은 모두 `dev`를 기준으로 진행합니다.
+- `main`으로의 릴리즈는 `dev`에서 안정화 후 진행합니다.
 
-## 권장 워크플로우
+## 2) 단기 브랜치(필수)
 
-### 1) 기능/코드 변경(일반 개발)
+아래 브랜치는 **작업 단위로 생성 → PR 병합 후 삭제**합니다.
 
-- 기준 브랜치: `dev`
-- 흐름:
-  1. `dev`에서 feature 브랜치 생성: `feature/<topic>`
-  2. 작업 후 PR을 `dev`로 생성
-  3. `dev`에서 변경이 안정화되면 PR을 `main`으로 생성하여 릴리즈 단위로 병합
+- `feature/<topic>`: 기능 추가/개선
+- `fix/<topic>`: 버그 수정
+- `docs/<topic>`: 문서 변경(README/CHANGELOG 포함)
+- `refactor/<topic>`: 기능 변경 없는 구조 개선
+- `chore/<topic>`: 설정/의존성 등
+- `wip/<topic>`: 실험/POC (필요 시)
 
-`dev`를 통합 브랜치로 두면, `main`은 항상 “릴리즈 가능한 상태”를 유지하기 쉽습니다.
+예시:
+- `feature/slash-command-recommend`
+- `fix/kst-schedule`
+- `docs/branching-guide`
 
-### 2) 문서 변경
+## 3) 개발 흐름(기본)
 
-- 기준 브랜치: `docs`
-- 흐름:
-  1. `docs`에서 docs 브랜치 생성: `docs/<topic>`
-  2. 작업 후 PR을 `docs`로 생성
-  3. 문서 변경을 릴리즈에 포함하려면 PR로 `docs` → `main`을 병합
+1. `dev` 최신화
+   - `git switch dev`
+   - `git pull --ff-only origin dev`
+2. 단기 브랜치 생성
+   - `git switch -c feature/<topic>` (또는 `fix/`, `docs/` 등)
+3. 작업 후 커밋
+4. 원격 푸시
+   - `git push -u origin <branch>`
+5. PR 생성 → 리뷰 → `dev`로 merge
+6. PR merge 이후 단기 브랜치 삭제
 
-> 문서 변경만 빠르게 반영하고 싶다면, 팀 합의 하에 `docs` PR을 직접 `main`으로 보내는 방식도 가능합니다.
+## 4) 릴리즈 흐름 (`dev` → `main`)
 
-### 3) 릴리즈(태그)
+릴리즈는 `dev`의 안정화된 상태를 `main`으로 올리는 방식으로 진행합니다.
 
-- 태그는 버전 스냅샷을 고정하기 위한 용도로 사용합니다.
-- 권장:
-  - `main`에서 릴리즈 PR이 병합된 커밋에 `vX.Y.Z` 태그를 생성
-  - `CHANGELOG.md` 업데이트는 해당 릴리즈 PR에 포함
+1. 릴리즈 PR 생성: `dev` → `main`
+2. PR merge 후 `main`에서 태그 생성
+   - `git tag vX.Y.Z`
+   - `git push origin vX.Y.Z`
 
-## 브랜치 동기화 규칙
+원칙:
+- 릴리즈에 필요한 문서(`CHANGELOG.md`) 갱신도 **`dev`에서 먼저** 반영합니다.
+- `main`에만 존재하는 커밋이 생기지 않게(드리프트 방지) 운영합니다.
 
-이 저장소는 `main`을 기준으로 `dev`, `docs`가 **정기적으로 `main`을 따라가도록** 유지하는 것이 좋습니다.
+## 5) Hotfix(긴급 수정)
 
-- 원칙: `dev`, `docs`는 `main`을 **fast-forward로 추종**
-- 방법(예시):
-  - `git switch dev && git merge --ff-only main`
-  - `git switch docs && git merge --ff-only main`
+이미 릴리즈된 버전에 긴급 수정이 필요하면 `main` 기준으로 처리합니다.
 
-이 규칙을 지키면 장기 브랜치 드리프트가 줄고, PR 충돌을 최소화할 수 있습니다.
+1. `main`에서 단기 브랜치 생성
+   - `git switch main`
+   - `git pull --ff-only origin main`
+   - `git switch -c fix/<topic>`
+2. PR을 `main`으로 병합
+3. `dev`에 역전파
+   - `main` → `dev` PR을 생성하여 병합(또는 `dev`에서 `main`을 merge)
+
+## 6) PR 규칙
+
+- `dev`/`main` 직접 푸시는 지양하고 PR로만 병합합니다.
+- PR은 가능한 작게 유지합니다(리뷰 가능한 크기).
+- PR 설명에는 “왜(why)”를 남깁니다.
+
+## 7) 커밋 메시지 규칙
+
+`README.md`의 접두어 규칙을 그대로 사용합니다.
+
+- `feat:` 새로운 기능 추가
+- `fix:` 버그 수정
+- `docs:` 문서 수정
+- `refactor:` 코드 리팩터링
+- `test:` 테스트 코드 추가

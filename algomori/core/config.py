@@ -1,51 +1,50 @@
+from __future__ import annotations
+
 import os
+
 from dotenv import load_dotenv
-from .interface import ConfigInterface
-from .exceptions import ConfigurationError
+
+from algomori.core.exceptions import ConfigurationError
+from algomori.core.interface import ConfigInterface
+
+
+DISCORD_BOT_TOKEN_ENV = "DISCORD_BOT_TOKEN"
+DISCORD_CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
+
 
 class Config(ConfigInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         load_dotenv()
-        self._validate_config()
 
-    def _validate_config(self):
-        """
-        📌 환경변수 검증을 수행
-        환경변수가 있는지 확인하고 없으면 ConfigurationError를 발생시킵니다.
-        """
-        missing_vars = []
+        token = os.getenv(DISCORD_BOT_TOKEN_ENV)
+        channel_id_raw = os.getenv(DISCORD_CHANNEL_ID_ENV)
 
-        if not os.getenv('DISCORD_BOT_TOKEN'):
-            missing_vars.append('DISCORD_BOT_TOKEN')
-
-        if not os.getenv('DISCORD_CHANNEL_ID'):
-            missing_vars.append('DISCORD_CHANNEL_ID')
+        missing_vars: list[str] = []
+        if token is None or token == "":
+            missing_vars.append(DISCORD_BOT_TOKEN_ENV)
+        if channel_id_raw is None or channel_id_raw == "":
+            missing_vars.append(DISCORD_CHANNEL_ID_ENV)
 
         if missing_vars:
             raise ConfigurationError(
-                f"필수 환경변수가 누락되었습니다: {', '.join(missing_vars)}\n"
-                f"환경변수(.env)를 확인해주세요."
+                "필수 환경변수가 누락되었습니다: {missing}\n환경변수(.env)를 확인해주세요.".format(
+                    missing=", ".join(missing_vars)
+                )
             )
 
-    def get_discord_token(self) -> str:
-        """
-        📌 .env 파일에 정의된 Discord Bot Token을 조회
-        """
-        token = os.getenv('DISCORD_BOT_TOKEN')
-        if not token:
-            raise ConfigurationError("DISCORD_BOT_TOKEN이 설정되지 않았습니다.")
-        
-        return token
-    
-    def get_discord_channel_id(self) -> int:
-        """
-        📌 .env 파일에 정의된 Discord Channel ID를 조회
-        """
-        channel_id = os.getenv('DISCORD_CHANNEL_ID')
-        if not channel_id:
-            raise ConfigurationError("DISCORD_CHANNEL_ID가 설정되지 않았습니다.")
-        
+        assert token is not None
+        assert channel_id_raw is not None
+
         try:
-            return int(channel_id)
-        except ValueError:
-            raise ConfigurationError(f"DISCORD_CHANNEL_ID는 숫자여야 합니다: {channel_id}")
+            channel_id = int(channel_id_raw)
+        except ValueError as e:
+            raise ConfigurationError(f"{DISCORD_CHANNEL_ID_ENV}는 숫자여야 합니다: {channel_id_raw}") from e
+
+        self._discord_bot_token = token
+        self._discord_channel_id = channel_id
+
+    def get_discord_token(self) -> str:
+        return self._discord_bot_token
+
+    def get_discord_channel_id(self) -> int:
+        return self._discord_channel_id

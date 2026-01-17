@@ -2,13 +2,18 @@
 🧩 solved.ac 등 외부 API 통신 담당
 """
 
+import asyncio
+from typing import Optional
+
 import requests
 
-from typing import Optional
 from algomori.core.exceptions import APIError, ProblemNotFoundError
 
 class SolvedAcClient:
     BASE_URL = "https://solved.ac/api/v3"
+
+    async def get_random_problem_async(self, tier: str, tag: Optional[str] = None) -> dict:
+        return await asyncio.to_thread(self.get_random_problem, tier, tag)
 
     def get_random_problem(self, tier: str, tag: Optional[str] = None) -> dict:
         # 쿼리 생성
@@ -24,7 +29,7 @@ class SolvedAcClient:
         headers = {"x-solvedac-language": "ko"}
         
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
 
             data = response.json()

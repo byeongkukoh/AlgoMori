@@ -4,17 +4,23 @@ from datetime import time, timezone, timedelta
 from discord.ext import commands, tasks
 
 from algomori.data.tier_map import TIER_MAP
+from algomori.discord.embeds import build_problem_embed
 from algomori.discord.views.tier_select import TierSelectView
 from algomori.core.exceptions import ConfigurationError, ProblemNotFoundError, APIError, ParseError
 from algomori.services.problem_service import ProblemService
 
 
 class RecommenderCog(commands.Cog):
+    async def cog_load(self) -> None:
+        self.daily_recommendation.start()
+
+    def cog_unload(self) -> None:
+        self.daily_recommendation.cancel()
+
     def __init__(self, bot: commands.Bot, problem_service: ProblemService, channel_id: int):
         self.bot = bot
         self.problem_service = problem_service
         self.channel_id = channel_id
-        self.daily_recommendation.start()
 
     @commands.command(name='추천')
     async def recommend(self, ctx, *args):
@@ -32,14 +38,9 @@ class RecommenderCog(commands.Cog):
             tier = args[0]
             tag = " ".join(args[1:]) if len(args) > 1 else None
 
-            problem = self.problem_service.get_random_problem(tier, tag)
+            problem = await self.problem_service.get_random_problem(tier, tag)
 
-            embed = discord.Embed(
-                title=f"{tier.title()} 문제 추천" + (f" - {tag}" if tag else ""),
-                description=f"{problem.title} (난이도: {problem.level})",
-                url=problem.url,
-                color=0x5c8aff,
-            )
+            embed = build_problem_embed(problem=problem, tier=tier, tag=tag)
 
             await ctx.send(embed=embed)
 
@@ -64,14 +65,9 @@ class RecommenderCog(commands.Cog):
 
         for tier in ["브론즈", "실버", "골드", "플래티넘"]:
             try:
-                problem = self.problem_service.get_random_problem(tier)
+                problem = await self.problem_service.get_random_problem(tier)
 
-                embed = discord.Embed(
-                    title=f"{tier.title()} 문제 추천",
-                    description=f"{problem.title} (난이도: {problem.level})",
-                    url=problem.url,
-                    color=0x5c8aff,
-                )
+                embed = build_problem_embed(problem=problem, tier=tier)
 
                 await channel.send(embed=embed)
 

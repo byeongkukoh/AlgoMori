@@ -4,6 +4,7 @@ from discord import ui
 
 from algomori.data.tag_list import TAG_LIST
 from algomori.core.exceptions import ConfigurationError, ProblemNotFoundError, APIError, ParseError
+from algomori.discord.embeds import build_problem_embed
 from algomori.services.problem_service import ProblemService
 
 
@@ -29,16 +30,15 @@ class TagSelect(ui.Select):
         tag = self.values[0]
 
         try:
-            problem = self.problem_service.get_random_problem(
+            problem = await self.problem_service.get_random_problem(
                 self.tier,
                 None if tag == "__ALL__" else tag,
             )
 
-            embed = discord.Embed(
-                title=f"{self.tier} - {'' if tag == '__ALL__' else tag} 문제 추천",
-                description=f"{problem.title} (난이도: {problem.level})",
-                url=problem.url,
-                color=0x5c8aff,
+            embed = build_problem_embed(
+                problem=problem,
+                tier=self.tier,
+                tag=None if tag == "__ALL__" else tag,
             )
 
             await interaction.response.edit_message(content=None, embed=embed, view=None)

@@ -91,15 +91,12 @@
 git clone https://github.com/byeongkukoh/AlgoMori.git
 cd AlgoMori
 
-# 가상환경 생성 및 활성화
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS/Linux
-source .venv/bin/activate
+# Conda 가상환경 생성 및 활성화
+conda create -n AlgoMori python=3.10 -y
+conda activate AlgoMori
 
 # 의존성 설치
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### 2️⃣ 환경변수 설정

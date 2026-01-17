@@ -1,0 +1,16 @@
+services:
+  algomori:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: algomori:latest
+    container_name: algomori
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Persist guild config under mounted volume.
+      # Can be overridden in .env as well.
+      ALGOMORI_GUILD_CONFIG_PATH: /app/runtime/guild_config.json
+    volumes:
+      - ./runtime:/app/runtime

@@ -85,11 +85,11 @@
 
 ## 🛠️ 설치 및 실행
 
-### ✅ 빠른 시작 (Docker/EC2 권장)
+### ✅ 빠른 시작 (Docker Compose/EC2 권장)
 
 전제:
 - EC2에 Docker 설치 완료
-- 이 저장소의 `Dockerfile`이 있는 위치에서 실행
+- Docker Compose 사용 가능 (Docker Compose v2 권장)
 
 ```bash
 # 저장소 클론
@@ -107,26 +107,40 @@ EOF
 # (2) 설정 파일 보관 디렉토리(호스트)
 mkdir -p runtime
 
-# (3) 이미지 빌드
-docker build -t algomori:latest .
-
-# (4) 컨테이너 실행
-# - --env-file 로 .env를 주입
+# (3) 빌드 + 실행
+# - .env 파일 자동 로드
 # - runtime/ 볼륨 마운트로 서버별 설정 유지
-docker run -d \
-  --name algomori \
-  --env-file .env \
-  -v $(pwd)/runtime:/app/runtime \
-  algomori:latest
+# - 업데이트 시: git pull 후 다시 up --build
+docker compose up -d --build
 
 # 로그 확인
-docker logs -f algomori
+docker compose logs -f
+```
+
+업데이트(EC2):
+```bash
+git pull
+docker compose up -d --build
 ```
 
 첫 실행 후 Discord 서버에서(원하는 채널에서):
 - `!설정` 실행 → 채널/시간(5분 단위) 설정
 
 > `DISCORD_BOT_TOKEN`은 운영 환경에서는 Secret으로 관리하는 것을 권장합니다.
+
+### (대안) docker run으로 실행
+
+```bash
+docker build -t algomori:latest .
+
+docker run -d \
+  --name algomori \
+  --env-file .env \
+  -v $(pwd)/runtime:/app/runtime \
+  algomori:latest
+
+docker logs -f algomori
+```
 
 ### 🧑‍💻 로컬 개발 (Conda)
 

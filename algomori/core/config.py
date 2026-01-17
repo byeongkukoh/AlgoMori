@@ -9,7 +9,7 @@ from algomori.core.interface import ConfigInterface
 
 
 DISCORD_BOT_TOKEN_ENV = "DISCORD_BOT_TOKEN"
-DISCORD_CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
+ALGOMORI_GUILD_CONFIG_PATH_ENV = "ALGOMORI_GUILD_CONFIG_PATH"
 
 
 class Config(ConfigInterface):
@@ -17,34 +17,18 @@ class Config(ConfigInterface):
         load_dotenv()
 
         token = os.getenv(DISCORD_BOT_TOKEN_ENV)
-        channel_id_raw = os.getenv(DISCORD_CHANNEL_ID_ENV)
-
-        missing_vars: list[str] = []
         if token is None or token == "":
-            missing_vars.append(DISCORD_BOT_TOKEN_ENV)
-        if channel_id_raw is None or channel_id_raw == "":
-            missing_vars.append(DISCORD_CHANNEL_ID_ENV)
-
-        if missing_vars:
             raise ConfigurationError(
-                "필수 환경변수가 누락되었습니다: {missing}\n환경변수(.env)를 확인해주세요.".format(
-                    missing=", ".join(missing_vars)
-                )
+                f"필수 환경변수가 누락되었습니다: {DISCORD_BOT_TOKEN_ENV}\n환경변수(.env)를 확인해주세요."
             )
 
-        assert token is not None
-        assert channel_id_raw is not None
-
-        try:
-            channel_id = int(channel_id_raw)
-        except ValueError as e:
-            raise ConfigurationError(f"{DISCORD_CHANNEL_ID_ENV}는 숫자여야 합니다: {channel_id_raw}") from e
-
         self._discord_bot_token = token
-        self._discord_channel_id = channel_id
+
+        # Guild 설정(JSON) 파일 경로 (채널 설정은 Discord에서 하고, 여기에는 저장만 함)
+        self._guild_config_path = os.getenv(ALGOMORI_GUILD_CONFIG_PATH_ENV) or "runtime/guild_config.json"
 
     def get_discord_token(self) -> str:
         return self._discord_bot_token
 
-    def get_discord_channel_id(self) -> int:
-        return self._discord_channel_id
+    def get_guild_config_path(self) -> str:
+        return self._guild_config_path

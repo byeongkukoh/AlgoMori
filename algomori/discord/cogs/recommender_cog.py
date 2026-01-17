@@ -7,6 +7,7 @@ from algomori.data.tier_map import TIER_MAP
 from algomori.discord.embeds import build_problem_embed
 from algomori.discord.views.tier_select import TierSelectView
 from algomori.core.exceptions import ConfigurationError, ProblemNotFoundError, APIError, ParseError
+from algomori.core.guild_config_store import GuildConfigStore
 from algomori.services.problem_service import ProblemService
 
 
@@ -17,10 +18,15 @@ class RecommenderCog(commands.Cog):
     def cog_unload(self) -> None:
         self.daily_recommendation.cancel()
 
-    def __init__(self, bot: commands.Bot, problem_service: ProblemService, channel_id: int):
+    def __init__(
+        self,
+        bot: commands.Bot,
+        problem_service: ProblemService,
+        config_store: GuildConfigStore,
+    ):
         self.bot = bot
         self.problem_service = problem_service
-        self.channel_id = channel_id
+        self.config_store = config_store
 
     @commands.command(name='추천')
     async def recommend(self, ctx, *args):
@@ -59,20 +65,22 @@ class RecommenderCog(commands.Cog):
     async def daily_recommendation(self):
         """매일 KST 오전 8시에 추천 문제를 특정 채널에 전송합니다."""
 
-        channel = self.bot.get_channel(self.channel_id)
-        if channel is None:
+        configs = self.config_store.list_configs()
+        if not configs:
             return
 
-        for tier in ["브론즈", "실버", "골드", "플래티넘"]:
-            try:
-                problem = await self.problem_service.get_random_problem(tier)
+        for cfg in configs:
+            channel = self.bot.get_channel(cfg.recommendation_channel_id)
+            if channel is None:
+                continue
 
-                embed = build_problem_embed(problem=problem, tier=tier)
-
-                await channel.send(embed=embed)
-
-            except Exception as e:
-                await channel.send(f"`{tier}에 해당하는 문제를 찾을 수 없습니다. ({e})`")
+            for tier in ["브론즈", "실버", "골드", "플래티넘"]:
+                try:
+                    problem = await self.problem_service.get_random_problem(tier)
+                    embed = build_problem_embed(problem=problem, tier=tier)
+                    await channel.send(embed=embed)
+                except Exception as e:
+                    await channel.send(f"`{tier}에 해당하는 문제를 찾을 수 없습니다. ({e})`")
 
     @daily_recommendation.before_loop
     async def before_daily_recommendation(self):

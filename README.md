@@ -100,12 +100,20 @@ python -m pip install -r requirements.txt
 ```
 
 ### 2️⃣ 환경변수 설정
-프로젝트 루트에 `.env` 파일을 생성하고 다음 내용을 입력하세요:
+
+운영 환경에서 Discord Bot Token을 secret으로 주입합니다.
+
+- 필수: `DISCORD_BOT_TOKEN`
+- 선택: `ALGOMORI_GUILD_CONFIG_PATH` (서버별 설정 저장 파일 경로, 기본값: `runtime/guild_config.json`)
+
+로컬 개발 시 프로젝트 루트에 `.env`를 만들고 다음처럼 입력하세요:
 
 ```ini
 DISCORD_BOT_TOKEN=your_discord_bot_token_here
-DISCORD_CHANNEL_ID=your_channel_id_here
+ALGOMORI_GUILD_CONFIG_PATH=runtime/guild_config.json
 ```
+
+> 자동 추천이 전송될 채널은 `.env`가 아니라 Discord에서 `!설정채널`로 설정합니다.
 
 ### 3️⃣ Discord 봇 설정
 1. **Discord Developer Portal**에서 새 애플리케이션 생성
@@ -140,6 +148,8 @@ python main.py
 | `!추천 [티어]` | 특정 난이도 문제 추천 | `!추천 골드` |
 | `!추천 [티어] [태그]` | 난이도 + 태그 조건 문제 추천 | `!추천 실버 BFS` |
 | `!태그` | 사용 가능한 태그 목록 표시 | `!태그` |
+| `!설정채널` | (관리자) 자동 추천 채널 설정 | `!설정채널` |
+| `!설정보기` | 현재 서버 설정 확인 | `!설정보기` |
 
 ### 🏅 지원하는 난이도
 - **브론즈** (Bronze I~V)
@@ -179,8 +189,27 @@ python main.py
 python main.py
 
 # 개별 모듈 테스트 (예시)
-python -c "from services.problem_service import ProblemService; print('OK')"
+python -c "import asyncio; from algomori.services.problem_service import ProblemService; from algomori.services.api_client import SolvedAcClient; s=ProblemService(SolvedAcClient()); asyncio.run(s.get_random_problem('실버'))"
 ```
+
+### 🐳 Docker/EC2 운영 (요약)
+
+- `DISCORD_BOT_TOKEN`은 **컨테이너 환경변수(Secret)** 로 주입합니다.
+- 서버별 자동 추천 채널 설정은 컨테이너의 `runtime/guild_config.json`에 저장되므로, EC2에서는 `/app/runtime`를 볼륨 마운트하는 것을 권장합니다.
+
+예시:
+```bash
+docker build -t algomori:latest .
+
+docker run -d \
+  --name algomori \
+  -e DISCORD_BOT_TOKEN=your_token_here \
+  -e ALGOMORI_GUILD_CONFIG_PATH=/app/runtime/guild_config.json \
+  -v $(pwd)/runtime:/app/runtime \
+  algomori:latest
+```
+
+> 최초 실행 후 Discord 서버에서 `!설정채널`을 실행해야 자동 추천이 전송됩니다.
 
 ---
 

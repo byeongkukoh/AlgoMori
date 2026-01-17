@@ -8,7 +8,9 @@ from discord.ext import commands
 
 from algomori.core.config import Config
 from algomori.core.exceptions import ConfigurationError
+from algomori.core.guild_config_store import GuildConfigStore
 from algomori.discord.cogs.recommender_cog import RecommenderCog
+from algomori.discord.cogs.settings_cog import SettingsCog
 from algomori.discord.cogs.tag_cog import TagCog
 from algomori.services.api_client import SolvedAcClient
 from algomori.services.problem_service import ProblemService
@@ -55,19 +57,15 @@ def create_bot(config: Config) -> commands.Bot:
 
     api_client = SolvedAcClient()
     problem_service = ProblemService(api_client)
+    config_store = GuildConfigStore(file_path=config.get_guild_config_path())
 
     @bot.event
     async def on_ready():
         info(f"{bot.user.name}으로 로그인되었습니다. (ID: {bot.user.id})")
 
-        await bot.add_cog(
-            RecommenderCog(
-                bot,
-                problem_service=problem_service,
-                channel_id=config.get_discord_channel_id(),
-            )
-        )
+        await bot.add_cog(RecommenderCog(bot, problem_service=problem_service, config_store=config_store))
         await bot.add_cog(TagCog(bot))
+        await bot.add_cog(SettingsCog(bot, config_store=config_store))
 
     return bot
 

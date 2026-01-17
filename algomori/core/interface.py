@@ -17,12 +17,12 @@ class ProblemServiceInterface(ABC):
 class ConfigInterface(ABC):
     @abstractmethod
     def get_discord_token(self) -> str:
-        """`.env`에 정의된 Discord Bot Token을 조회합니다."""
+        """운영 환경에서 주입된 Discord Bot Token을 조회합니다."""
 
         ...
 
     @abstractmethod
-    def get_discord_channel_id(self) -> int:
-        """`.env`에 정의된 Discord Channel ID를 조회합니다."""
+    def get_guild_config_path(self) -> str:
+        """Guild(서버)별 설정을 저장할 파일 경로를 반환합니다."""
 
         ...

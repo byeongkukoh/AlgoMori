@@ -8,8 +8,17 @@ from algomori.domain.models.problem import Problem
 
 class ProblemServiceInterface(ABC):
     @abstractmethod
-    async def get_random_problem(self, tier: str, tag: Optional[str] = None) -> Problem:
-        """티어와 태그(선택)를 바탕으로 랜덤 문제를 조회합니다."""
+    async def get_random_problem(
+        self,
+        tier: str,
+        tag: Optional[str] = None,
+        exclude_solved_by: Optional[str] = None,
+    ) -> Problem:
+        """티어/태그(선택) 조건으로 랜덤 문제를 조회합니다.
+
+        `exclude_solved_by`가 주어지면 solved.ac 고급검색 `-@handle`을 사용해
+        해당 유저가 이미 푼 문제를 제외합니다.
+        """
 
         ...
 

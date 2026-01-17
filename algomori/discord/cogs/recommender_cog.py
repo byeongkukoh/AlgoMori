@@ -37,6 +37,7 @@ class RecommenderCog(commands.Cog):
         !추천 : 단계별 선택 인터랙션이 시작됩니다.
         !추천 [티어] : 해당 난이도(티어)의 문제를 랜덤으로 추천합니다.
         !추천 [티어] [태그] : 해당 난이도와 태그에 맞는 문제를 랜덤으로 추천합니다.
+        !추천 [티어] [태그] @boj_id : (선택) 특정 유저가 안 푼 문제 추천 (10,000명+ 푼 문제만)
         """
 
         try:
@@ -45,9 +46,23 @@ class RecommenderCog(commands.Cog):
                 return
 
             tier = args[0]
-            tag = " ".join(args[1:]) if len(args) > 1 else None
 
-            problem = await self.problem_service.get_random_problem(tier, tag)
+            exclude_solved_by: str | None = None
+
+            tag_tokens = list(args[1:])
+            if tag_tokens and tag_tokens[-1].startswith("@"): 
+                candidate = tag_tokens[-1].lstrip("@").strip()
+                if candidate:
+                    exclude_solved_by = candidate
+                    tag_tokens = tag_tokens[:-1]
+
+            tag = " ".join(tag_tokens) if tag_tokens else None
+
+            problem = await self.problem_service.get_random_problem(
+                tier,
+                tag,
+                exclude_solved_by=exclude_solved_by,
+            )
 
             embed = build_problem_embed(problem=problem, tier=tier, tag=tag)
 
@@ -58,7 +73,7 @@ class RecommenderCog(commands.Cog):
         except Exception as e:
             await ctx.send(
                 f"""오류 발생: {e}
-                명령어 예시: `!추천 브론즈` 또는 !추천 실버 다익스트라
+                명령어 예시: `!추천 브론즈` 또는 `!추천 실버 다익스트라` 또는 `!추천 실버 @boj_id`
                 가능한 티어: {', '.join(TIER_MAP.keys())}"""
             )
 

@@ -85,57 +85,82 @@
 
 ## 🛠️ 설치 및 실행
 
-### 1️⃣ 환경 준비
+### ✅ 빠른 시작 (Docker/EC2 권장)
+
+전제:
+- EC2에 Docker 설치 완료
+- 이 저장소의 `Dockerfile`이 있는 위치에서 실행
+
 ```bash
 # 저장소 클론
 git clone https://github.com/byeongkukoh/AlgoMori.git
 cd AlgoMori
 
-# Conda 가상환경 생성 및 활성화
+# (1) 환경변수 파일(.env) 생성 (repo root)
+# 필수: DISCORD_BOT_TOKEN
+cat > .env <<'EOF'
+DISCORD_BOT_TOKEN=your_discord_bot_token_here
+# (선택) 서버별 설정 저장 경로
+ALGOMORI_GUILD_CONFIG_PATH=/app/runtime/guild_config.json
+EOF
+
+# (2) 설정 파일 보관 디렉토리(호스트)
+mkdir -p runtime
+
+# (3) 이미지 빌드
+docker build -t algomori:latest .
+
+# (4) 컨테이너 실행
+# - --env-file 로 .env를 주입
+# - runtime/ 볼륨 마운트로 서버별 설정 유지
+docker run -d \
+  --name algomori \
+  --env-file .env \
+  -v $(pwd)/runtime:/app/runtime \
+  algomori:latest
+
+# 로그 확인
+docker logs -f algomori
+```
+
+첫 실행 후 Discord 서버에서(원하는 채널에서):
+- `!설정` 실행 → 채널/시간(5분 단위) 설정
+
+> `DISCORD_BOT_TOKEN`은 운영 환경에서는 Secret으로 관리하는 것을 권장합니다.
+
+### 🧑‍💻 로컬 개발 (Conda)
+
+```bash
+# Conda 가상환경 생성/활성화
 conda create -n AlgoMori python=3.10 -y
 conda activate AlgoMori
 
 # 의존성 설치
 python -m pip install -r requirements.txt
+
+# 로컬 실행
+python main.py
 ```
 
-### 2️⃣ 환경변수 설정
-
-운영 환경에서 Discord Bot Token을 secret으로 주입합니다.
+### 🔐 환경변수
 
 - 필수: `DISCORD_BOT_TOKEN`
-- 선택: `ALGOMORI_GUILD_CONFIG_PATH` (서버별 설정 저장 파일 경로, 기본값: `runtime/guild_config.json`)
+- 선택: `ALGOMORI_GUILD_CONFIG_PATH` (기본값: `runtime/guild_config.json`)
 
-로컬 개발 시 **프로젝트 루트(= `Dockerfile`이 있는 위치)** 에 `.env`를 만들고 다음처럼 입력하세요:
+로컬 개발 시 repo root에 `.env`를 만들고 다음처럼 입력하세요:
 
 ```ini
 DISCORD_BOT_TOKEN=your_discord_bot_token_here
 ALGOMORI_GUILD_CONFIG_PATH=runtime/guild_config.json
 ```
 
-> 자동 추천 채널/시간은 `.env`가 아니라 Discord에서 `!설정`(마법사)로 설정합니다. (시간은 5분 단위)
-
-### 3️⃣ Discord 봇 설정
-1. **Discord Developer Portal**에서 새 애플리케이션 생성
-2. **Bot** 탭에서 봇 생성 및 토큰 복사
-3. **Privileged Gateway Intents**에서 다음 항목 활성화:
+### 🤖 Discord 봇 설정
+1. Discord Developer Portal에서 애플리케이션 생성
+2. Bot 생성 후 토큰 발급
+3. Privileged Gateway Intents 활성화
    - `MESSAGE CONTENT INTENT`
    - `SERVER MEMBERS INTENT`
-4. **OAuth2 > URL Generator**에서 봇 권한 설정:
-   - `bot`, `applications.commands`
-   - `Send Messages`, `Use Slash Commands`, `Read Message History`
-
-### 4️⃣ 봇 실행
-```bash
-python main.py
-```
-
-성공적으로 실행되면 다음과 같은 로그가 출력됩니다:
-```
-[INFO] 환경변수 설정을 로드하였습니다.
-[INFO] Discord Bot을 시작합니다.
-[INFO] AlgoMori으로 로그인되었습니다. (ID: xxxxxxxxxx)
-```
+4. OAuth2 URL Generator로 서버에 봇 초대
 
 ---
 
@@ -193,41 +218,14 @@ python main.py
 python -c "import asyncio; from algomori.services.problem_service import ProblemService; from algomori.services.api_client import SolvedAcClient; s=ProblemService(SolvedAcClient()); asyncio.run(s.get_random_problem('실버'))"
 ```
 
-### 🐳 Docker/EC2 운영 (요약)
+### 🐳 Docker/EC2 운영
 
-- `DISCORD_BOT_TOKEN`은 **컨테이너 환경변수(Secret)** 로 주입합니다.
-- 서버별 자동 추천 채널 설정은 컨테이너의 `runtime/guild_config.json`에 저장되므로, EC2에서는 `/app/runtime`를 볼륨 마운트하는 것을 권장합니다.
+운영 배포는 상단의 **"빠른 시작 (Docker/EC2 권장)"** 섹션을 그대로 따릅니다.
 
-예시(권장: `.env` 파일 사용):
-```bash
-# (1) Dockerfile이 있는 repo root에서
-#     .env 파일 생성 (예: DISCORD_BOT_TOKEN=...)
+- `DISCORD_BOT_TOKEN`은 Secret(환경변수)로 주입
+- `runtime/`는 볼륨 마운트로 유지 (서버별 채널/시간 설정 유지)
+- 최초 실행 후 Discord에서 `!설정`으로 채널/시간을 설정
 
-# (2) 이미지 빌드
-docker build -t algomori:latest .
-
-# (3) 컨테이너 실행
-# - .env 파일은 호스트의 현재 디렉토리에서 읽어 환경변수로 주입됨
-# - runtime/ 은 EC2에서 볼륨으로 유지 (서버별 설정 유지)
-docker run -d \
-  --name algomori \
-  --env-file .env \
-  -e ALGOMORI_GUILD_CONFIG_PATH=/app/runtime/guild_config.json \
-  -v $(pwd)/runtime:/app/runtime \
-  algomori:latest
-```
-
-대안(직접 env 주입):
-```bash
-docker run -d \
-  --name algomori \
-  -e DISCORD_BOT_TOKEN=your_token_here \
-  -e ALGOMORI_GUILD_CONFIG_PATH=/app/runtime/guild_config.json \
-  -v $(pwd)/runtime:/app/runtime \
-  algomori:latest
-```
-
-> 최초 실행 후 Discord 서버에서 `!설정`을 실행해야 자동 추천이 전송됩니다.
 
 ---
 

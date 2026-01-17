@@ -6,6 +6,29 @@ from dataclasses import dataclass
 from typing import Any
 
 
+def validate_hhmm(value: str) -> str:
+    """HH:MM(24h) 형식을 검증하고 정규화된 문자열을 반환합니다."""
+
+    value = value.strip()
+    parts = value.split(":")
+    if len(parts) != 2:
+        raise ValueError("시간 형식은 HH:MM 이어야 합니다.")
+
+    hour_str, minute_str = parts
+    if not hour_str.isdigit() or not minute_str.isdigit():
+        raise ValueError("시간 형식은 숫자(HH:MM) 이어야 합니다.")
+
+    hour = int(hour_str)
+    minute = int(minute_str)
+
+    if not (0 <= hour <= 23):
+        raise ValueError("시간(HH)은 00~23 범위여야 합니다.")
+    if not (0 <= minute <= 59):
+        raise ValueError("분(MM)은 00~59 범위여야 합니다.")
+
+    return f"{hour:02d}:{minute:02d}"
+
+
 DEFAULT_CONFIG_PATH = "runtime/guild_config.json"
 
 
@@ -13,6 +36,7 @@ DEFAULT_CONFIG_PATH = "runtime/guild_config.json"
 class GuildConfig:
     guild_id: int
     recommendation_channel_id: int
+    recommendation_time_hhmm: str
 
 
 class GuildConfigStore:
@@ -20,7 +44,13 @@ class GuildConfigStore:
 
     - BOT_TOKEN 같은 secret은 절대 저장하지 않습니다.
     - Docker/EC2에서는 파일 경로를 볼륨으로 마운트하는 형태를 권장합니다.
+
+    저장되는 값:
+    - recommendation_channel_id: 자동 추천 채널 ID
+    - recommendation_time_hhmm: 자동 추천 시각(HH:MM, KST 기준)
     """
+
+    DEFAULT_RECOMMENDATION_TIME_HHMM = "08:00"
 
     def __init__(self, file_path: str = DEFAULT_CONFIG_PATH):
         self._file_path = file_path
@@ -34,9 +64,38 @@ class GuildConfigStore:
 
         guild_entry = data.get(guild_key, {})
         guild_entry["recommendation_channel_id"] = int(channel_id)
+        guild_entry.setdefault("recommendation_time_hhmm", self.DEFAULT_RECOMMENDATION_TIME_HHMM)
         data[guild_key] = guild_entry
 
         self._save_raw(data)
+
+    def set_recommendation_time(self, *, guild_id: int, hhmm: str) -> None:
+        hhmm = validate_hhmm(hhmm)
+
+        data = self._load_raw()
+        guild_key = str(guild_id)
+
+        guild_entry = data.get(guild_key, {})
+        guild_entry.setdefault("recommendation_channel_id", None)
+        guild_entry["recommendation_time_hhmm"] = hhmm
+        data[guild_key] = guild_entry
+
+        self._save_raw(data)
+
+    def get_recommendation_time_hhmm(self, *, guild_id: int) -> str | None:
+        data = self._load_raw()
+        guild_entry = data.get(str(guild_id))
+        if not isinstance(guild_entry, dict):
+            return None
+
+        hhmm = guild_entry.get("recommendation_time_hhmm")
+        if not isinstance(hhmm, str):
+            return None
+
+        try:
+            return validate_hhmm(hhmm)
+        except ValueError:
+            return None
 
     def get_recommendation_channel_id(self, *, guild_id: int) -> int | None:
         data = self._load_raw()
@@ -70,6 +129,14 @@ class GuildConfigStore:
                     GuildConfig(
                         guild_id=int(guild_id_str),
                         recommendation_channel_id=int(channel_id),
+                        recommendation_time_hhmm=validate_hhmm(
+                            str(
+                                guild_entry.get(
+                                    "recommendation_time_hhmm",
+                                    self.DEFAULT_RECOMMENDATION_TIME_HHMM,
+                                )
+                            )
+                        ),
                     )
                 )
             except (TypeError, ValueError):

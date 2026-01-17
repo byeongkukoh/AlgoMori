@@ -4,12 +4,24 @@ import discord
 from discord.ext import commands
 
 from algomori.core.guild_config_store import GuildConfigStore
+from algomori.discord.views.setup_wizard import SetupWizardView
 
 
 class SettingsCog(commands.Cog):
     def __init__(self, bot: commands.Bot, config_store: GuildConfigStore):
         self.bot = bot
         self.config_store = config_store
+
+    @commands.command(name="설정")
+    @commands.guild_only()
+    @commands.has_guild_permissions(manage_guild=True)
+    async def setup(self, ctx: commands.Context) -> None:
+        """서버 설정을 순서대로 진행합니다."""
+
+        assert ctx.guild is not None
+
+        view = SetupWizardView(store=self.config_store, guild_id=ctx.guild.id)
+        await ctx.send(view.build_initial_message(), view=view)
 
     @commands.command(name="설정채널")
     @commands.guild_only()
@@ -47,13 +59,24 @@ class SettingsCog(commands.Cog):
         assert ctx.guild is not None
 
         channel_id = self.config_store.get_recommendation_channel_id(guild_id=ctx.guild.id)
+        time_hhmm = (
+            self.config_store.get_recommendation_time_hhmm(guild_id=ctx.guild.id)
+            or self.config_store.DEFAULT_RECOMMENDATION_TIME_HHMM
+        )
+
         if channel_id is None:
-            await ctx.send("자동 추천 채널이 아직 설정되지 않았습니다. `!설정채널`을 실행하세요.")
+            await ctx.send(
+                "자동 추천 채널이 아직 설정되지 않았습니다. `!설정` 또는 `!설정채널`을 실행하세요.\n"
+                f"자동 추천 시간(KST): {time_hhmm}"
+            )
             return
 
         channel = self.bot.get_channel(channel_id)
         if channel is None:
-            await ctx.send(f"자동 추천 채널 ID: {channel_id} (채널을 찾지 못했습니다)")
+            await ctx.send(
+                f"자동 추천 채널 ID: {channel_id} (채널을 찾지 못했습니다)\n"
+                f"자동 추천 시간(KST): {time_hhmm}"
+            )
             return
 
-        await ctx.send(f"자동 추천 채널: {channel.mention}")
+        await ctx.send(f"자동 추천 채널: {channel.mention}\n자동 추천 시간(KST): {time_hhmm}")

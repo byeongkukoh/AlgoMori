@@ -1,6 +1,6 @@
 import discord
 
-from datetime import time, timezone, timedelta
+from datetime import datetime, timezone, timedelta
 from discord.ext import commands, tasks
 
 from algomori.data.tier_map import TIER_MAP
@@ -27,6 +27,7 @@ class RecommenderCog(commands.Cog):
         self.bot = bot
         self.problem_service = problem_service
         self.config_store = config_store
+        self._last_sent_by_guild_and_time: dict[tuple[int, str], str] = {}
 
     @commands.command(name='추천')
     async def recommend(self, ctx, *args):
@@ -61,15 +62,26 @@ class RecommenderCog(commands.Cog):
 
     kst = timezone(timedelta(hours=9))
 
-    @tasks.loop(time=[time(8, 0, 0, tzinfo=kst)])
+    @tasks.loop(minutes=1)
     async def daily_recommendation(self):
-        """매일 KST 오전 8시에 추천 문제를 특정 채널에 전송합니다."""
+        """설정된 시각(KST)에 자동 추천을 전송합니다."""
+
+        now = datetime.now(self.kst)
+        now_hhmm = now.strftime("%H:%M")
+        today = now.strftime("%Y-%m-%d")
 
         configs = self.config_store.list_configs()
         if not configs:
             return
 
         for cfg in configs:
+            if cfg.recommendation_time_hhmm != now_hhmm:
+                continue
+
+            key = (cfg.guild_id, cfg.recommendation_time_hhmm)
+            if self._last_sent_by_guild_and_time.get(key) == today:
+                continue
+
             channel = self.bot.get_channel(cfg.recommendation_channel_id)
             if channel is None:
                 continue
@@ -81,6 +93,8 @@ class RecommenderCog(commands.Cog):
                     await channel.send(embed=embed)
                 except Exception as e:
                     await channel.send(f"`{tier}에 해당하는 문제를 찾을 수 없습니다. ({e})`")
+
+            self._last_sent_by_guild_and_time[key] = today
 
     @daily_recommendation.before_loop
     async def before_daily_recommendation(self):

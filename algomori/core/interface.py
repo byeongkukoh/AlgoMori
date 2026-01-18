@@ -13,6 +13,7 @@ class ProblemServiceInterface(ABC):
         tier: str,
         tag: Optional[str] = None,
         exclude_solved_by: Optional[str] = None,
+        exclude_solved_by_list: list[str] | None = None,
         min_solved_count: int | None = None,
     ) -> Problem:
         """티어/태그(선택) 조건으로 랜덤 문제를 조회합니다.

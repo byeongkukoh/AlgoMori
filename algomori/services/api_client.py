@@ -22,6 +22,7 @@ class SolvedAcClient:
         tag: Optional[str] = None,
         *,
         exclude_solved_by: Optional[str] = None,
+        exclude_solved_by_list: Optional[list[str]] = None,
         min_solved_count: int = DEFAULT_MIN_SOLVED_COUNT,
     ) -> dict:
         return await asyncio.to_thread(
@@ -29,6 +30,7 @@ class SolvedAcClient:
             tier,
             tag,
             exclude_solved_by=exclude_solved_by,
+            exclude_solved_by_list=exclude_solved_by_list,
             min_solved_count=min_solved_count,
         )
 
@@ -38,12 +40,14 @@ class SolvedAcClient:
         tag: Optional[str] = None,
         *,
         exclude_solved_by: Optional[str] = None,
+        exclude_solved_by_list: Optional[list[str]] = None,
         min_solved_count: int = DEFAULT_MIN_SOLVED_COUNT,
     ) -> dict:
         query = self._build_query(
             tier=tier,
             tag=tag,
             exclude_solved_by=exclude_solved_by,
+            exclude_solved_by_list=exclude_solved_by_list,
             min_solved_count=min_solved_count,
         )
 
@@ -80,6 +84,7 @@ class SolvedAcClient:
         tier: str,
         tag: Optional[str],
         exclude_solved_by: Optional[str],
+        exclude_solved_by_list: Optional[list[str]],
         min_solved_count: int,
     ) -> str:
         tokens: list[str] = [
@@ -90,8 +95,14 @@ class SolvedAcClient:
         if tag:
             tokens.append(f"tag:{tag}")
 
+        exclude_handles: list[str] = []
         if exclude_solved_by:
-            handle = exclude_solved_by.strip().lstrip("@")
+            exclude_handles.append(exclude_solved_by)
+        if exclude_solved_by_list:
+            exclude_handles.extend(exclude_solved_by_list)
+
+        for raw in exclude_handles:
+            handle = raw.strip().lstrip("@").strip()
             if handle:
                 tokens.append(f"-@{handle}")
 

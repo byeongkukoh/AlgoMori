@@ -20,11 +20,13 @@ class ProblemService(ProblemServiceInterface):
         tier: str,
         tag: Optional[str] = None,
         exclude_solved_by: Optional[str] = None,
+        exclude_solved_by_list: list[str] | None = None,
         min_solved_count: int | None = None,
     ) -> Problem:
         tier = tier.strip()
         tag = tag.strip() if tag else None
         exclude_solved_by = exclude_solved_by.strip() if exclude_solved_by else None
+        exclude_solved_by_list = [h.strip() for h in exclude_solved_by_list] if exclude_solved_by_list else None
 
         tier_range = TIER_MAP.get(tier)
         if not tier_range:
@@ -49,6 +51,7 @@ class ProblemService(ProblemServiceInterface):
             tier_range,
             en_tag,
             exclude_solved_by=exclude_solved_by,
+            exclude_solved_by_list=exclude_solved_by_list,
             min_solved_count=min_solved_count,
         )
 

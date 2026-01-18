@@ -7,6 +7,7 @@ from discord.ext import commands, tasks
 
 from algomori.data.tier_map import TIER_MAP
 from algomori.discord.embeds import build_problem_embed
+from algomori.discord.views.alio_olio import AlioOlioView
 from algomori.discord.views.tier_select import TierSelectView
 from algomori.core.exceptions import ConfigurationError, ProblemNotFoundError, APIError, ParseError
 from algomori.core.guild_config_store import GuildConfigStore
@@ -43,6 +44,11 @@ class RecommenderCog(commands.Cog):
         try:
             if not args:
                 await ctx.send("원하는 티어를 선택하세요.", view=TierSelectView(problem_service=self.problem_service))
+                return
+
+            if args[0] == "알리오골리오":
+                view = AlioOlioView(problem_service=self.problem_service)
+                await ctx.send(view.build_initial_message(), view=view)
                 return
 
             tier = args[0]

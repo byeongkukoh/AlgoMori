@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import discord
 
+from algomori.domain.level import format_problem_level
 from algomori.domain.models.problem import Problem
 
 
@@ -13,7 +14,7 @@ def build_problem_embed(*, problem: Problem, tier: str, tag: str | None = None) 
 
     return discord.Embed(
         title=title,
-        description=f"{problem.title} (난이도: {problem.level})",
+        description=f"{problem.title} (난이도: {format_problem_level(problem.level)})",
         url=problem.url,
         color=EMBED_COLOR,
     )

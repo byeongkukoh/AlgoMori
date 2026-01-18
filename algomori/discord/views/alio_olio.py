@@ -5,6 +5,7 @@ from discord import ui
 
 from algomori.core.exceptions import APIError, ConfigurationError, ParseError, ProblemNotFoundError
 from algomori.discord.embeds import EMBED_COLOR
+from algomori.domain.level import format_problem_level
 from algomori.domain.models.problem import Problem
 from algomori.services.problem_service import ProblemService
 
@@ -85,7 +86,8 @@ class AlioOlioView(ui.View):
         return (
             "알리오골리오 설정 완료\n"
             f"- 스터디 인원: {members}\n"
-            f"- 최소 해결 인원 수: {solved}\n\n"
+            f"- 최소 해결 인원 수: {solved}\n"
+            "- 구성: 실버 1문제 + 골드 3문제 (태그 비중복)\n\n"
             "추천을 생성합니다..."
         )
 
@@ -139,8 +141,12 @@ class AlioOlioView(ui.View):
             used_tags.update(p.tags)
             golds.append(p)
 
-        results: list[tuple[str, Problem]] = [("실버 1문제", silver)]
-        results.extend([(f"골드 {idx + 1}/3", p) for idx, p in enumerate(golds)])
+        results: list[tuple[str, Problem]] = [
+            ("문제 1", silver),
+            ("문제 2", golds[0]),
+            ("문제 3", golds[1]),
+            ("문제 4", golds[2]),
+        ]
         return results
 
     async def _pick_one(self, tier: str, used_tags: set[str]) -> Problem:
@@ -163,6 +169,10 @@ class AlioOlioView(ui.View):
     def _make_embed(self, *, problem: Problem, title: str) -> discord.Embed:
         return discord.Embed(
             title=title,
-            description=f"{problem.title} (난이도: {problem.level})\n{problem.url}",
+            description=(
+                f"{problem.title}\n"
+                f"난이도: {format_problem_level(problem.level)}\n"
+                f"{problem.url}"
+            ),
             color=EMBED_COLOR,
         )
